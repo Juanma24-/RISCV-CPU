@@ -1,6 +1,5 @@
 -- CPU Related Package
 library ieee;
-
 use ieee.std_logic_1164.all;
 
 package CPU_PKG is
@@ -15,6 +14,12 @@ package CPU_PKG is
     -- U-Type: "01000000" 0x40
     -- J-Type: "10000000" 0x80
 
+    constant R_TYPE_ACT_BIT_C : integer := 2; 
+    constant I_TYPE_ACT_BIT_C : integer := 3; 
+    constant S_TYPE_ACT_BIT_C : integer := 4; 
+    constant B_TYPE_ACT_BIT_C : integer := 5; 
+    constant U_TYPE_ACT_BIT_C : integer := 6; 
+    constant J_TYPE_ACT_BIT_C : integer := 7; 
 
     -- =======================================
     -- INTEGER REGISTER-IMMEDIATE INSTRUCTIONS
