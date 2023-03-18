@@ -26,6 +26,16 @@ architecture arch of instr_decoder is
   signal type_u_s : std_logic := '0'; -- Asserted if Type U instruction is fetched
   signal type_j_s : std_logic := '0'; -- Asserted if Type J instruction is fetched
 
+  -- Decoded fields
+  signal rd_r     : std_logic_vector(4 downto 0);  -- RD field 
+  signal funct3_r : std_logic_vector(2 downto 0);  -- FUNCT3 field
+  signal rs1_r    : std_logic_vector(3 downto 0);  -- RS1 field 
+  signal rs2_r    : std_logic_vector(4 downto 0);  -- RS2 field
+  signal funct7_r : std_logic_vector(6 downto 0);  -- FUNCT7 field
+  signal imm_r    : std_logic_vector(20 downto 0); -- IMM Field
+
+
+
 begin
 
   -- ----------------------------------------
@@ -51,43 +61,20 @@ begin
   end procedure;
   begin
     if (G_RSTTYPESEL= '0' and  G_RSTACTIVELVL = rst_i) then
+      Reset;
+    elsif(rising_edge(clk_i)) then
+
+      if(type_r_s = '1') then
+
+
+
+      end if;
 
       if(G_RSTTYPESEL = '1' and G_RSTACTIVELVL = rst_i) then
-      
+        Reset;
       end if;
     end if;
   end process ; -- r_decoder_p
-
-  -- S TYPE DECODER
-  s_decoder_p : process( clk_i, rst_i )
-  procedure Reset is
-    begin
-
-  end procedure;
-  begin
-    if (G_RSTTYPESEL= '0' and  G_RSTACTIVELVL = rst_i) then
-
-      if(G_RSTTYPESEL = '1' and G_RSTACTIVELVL = rst_i) then
-      
-      end if;
-    end if;
-  end process ; -- s_decoder_p
-
-    -- S TYPE DECODER
-  s_decoder_p : process( clk_i, rst_i )
-  procedure Reset is
-    begin
-
-  end procedure;
-  begin
-    if (G_RSTTYPESEL= '0' and  G_RSTACTIVELVL = rst_i) then
-
-      if(G_RSTTYPESEL = '1' and G_RSTACTIVELVL = rst_i) then
-      
-      end if;
-    end if;
-  end process ; -- s_decoder_p
-
 
 
 end arch ; -- arch
