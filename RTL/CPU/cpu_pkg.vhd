@@ -44,16 +44,27 @@ package CPU_PKG is
     -- ====================================
     constant OP_C : std_logic_vector(7 downto 0) := "00000100"; -- OP instructions are encoded with OPCODE 0x8
 
-    constant F_ADD_C  : std_logic_vector(9 downto 0) := "0000000_000"; -- ADD performs the addition of rs1 and rs2.
-    constant F_SLT_C  : std_logic_vector(9 downto 0) := "0000000_001"; -- SLT perforñs signed comparison, 1 to rd if rs1 < rs2, 0 otherwise.
-    constant F_SLTU_C : std_logic_vector(9 downto 0) := "0000000_010"; -- SLTU performs unsigned comparison, 1 to rd if rs1 < rs2, 0 otherwise.
-    constant F_AND_C  : std_logic_vector(9 downto 0) := "0000000_011"; -- AND, OR, and XOR perform bitwise logical operations
-    constant F_OR_C   : std_logic_vector(9 downto 0) := "0000000_100"; -- AND, OR, and XOR perform bitwise logical operations
-    constant F_XOR_C  : std_logic_vector(9 downto 0) := "0000000_101"; -- AND, OR, and XOR perform bitwise logical operations
-    constant F_SLL_C  : std_logic_vector(9 downto 0) := "0000000_110"; -- SLL performs logical left shift
-    constant F_SRL_C  : std_logic_vector(9 downto 0) := "0000000_111"; -- SRL performs logical right shift
-    constant F_SUB_C  : std_logic_vector(9 downto 0) := "0100000_000"; -- SUB performs the subtraction of rs2 from rs1.
-    constant F_SRA_C  : std_logic_vector(9 downto 0) := "0100000_001"; -- SRA performs  arithmetic right shifts on the value in register rs1 by the shift amount held in the lower 5 bits of register rs2
+    constant F3_ADD_C  : std_logic_vector(2 downto 0) := "000"; -- ADD performs the addition of rs1 and rs2.
+    constant F3_SLT_C  : std_logic_vector(2 downto 0) := "001"; -- SLT perforñs signed comparison, 1 to rd if rs1 < rs2, 0 otherwise.
+    constant F3_SLTU_C : std_logic_vector(2 downto 0) := "010"; -- SLTU performs unsigned comparison, 1 to rd if rs1 < rs2, 0 otherwise.
+    constant F3_AND_C  : std_logic_vector(2 downto 0) := "011"; -- AND, OR, and XOR perform bitwise logical operations
+    constant F3_OR_C   : std_logic_vector(2 downto 0) := "100"; -- AND, OR, and XOR perform bitwise logical operations
+    constant F3_XOR_C  : std_logic_vector(2 downto 0) := "101"; -- AND, OR, and XOR perform bitwise logical operations
+    constant F3_SLL_C  : std_logic_vector(2 downto 0) := "110"; -- SLL performs logical left shift
+    constant F3_SRL_C  : std_logic_vector(2 downto 0) := "111"; -- SRL performs logical right shift
+    constant F3_SUB_C  : std_logic_vector(2 downto 0) := "000"; -- SUB performs the subtraction of rs2 from rs1.
+    constant F3_SRA_C  : std_logic_vector(2 downto 0) := "001"; -- SRA performs  arithmetic right shifts on the value in register rs1 by the shift amount held in the lower 5 bits of register rs2
+
+    constant F7_ADD_C  : std_logic_vector(6 downto 0) := "0000000"; -- ADD performs the addition of rs1 and rs2.
+    constant F7_SLT_C  : std_logic_vector(9 downto 0) := "0000000"; -- SLT perforñs signed comparison, 1 to rd if rs1 < rs2, 0 otherwise.
+    constant F7_SLTU_C : std_logic_vector(9 downto 0) := "0000000"; -- SLTU performs unsigned comparison, 1 to rd if rs1 < rs2, 0 otherwise.
+    constant F7_AND_C  : std_logic_vector(9 downto 0) := "0000000"; -- AND, OR, and XOR perform bitwise logical operations
+    constant F7_OR_C   : std_logic_vector(9 downto 0) := "0000000"; -- AND, OR, and XOR perform bitwise logical operations
+    constant F7_XOR_C  : std_logic_vector(9 downto 0) := "0000000"; -- AND, OR, and XOR perform bitwise logical operations
+    constant F7_SLL_C  : std_logic_vector(9 downto 0) := "0000000"; -- SLL performs logical left shift
+    constant F7_SRL_C  : std_logic_vector(9 downto 0) := "0000000"; -- SRL performs logical right shift
+    constant F7_SUB_C  : std_logic_vector(9 downto 0) := "0100000"; -- SUB performs the subtraction of rs2 from rs1.
+    constant F7_SRA_C  : std_logic_vector(9 downto 0) := "0100000"; -- SRA performs  arithmetic right shifts on the value in register rs1 by the shift amount held in the lower 5 bits of register rs2
 
     -- ====================================
     -- CONTROL TRANSFER FUNCTIONS
