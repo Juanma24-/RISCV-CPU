@@ -7,14 +7,14 @@ use work.CPU_PKG.all;
 entity instr_decoder is
   generic (
     G_RSTTYPESEL : integer := 0; -- 0: Asynchronous Reset, 1: Synchronous Reset
-    G_RSTACTIVELVL : std_logic := '0'; -- Reset active level
-  )
+    G_RSTACTIVELVL : std_logic := '0' -- Reset active level
+  );
   port (
     clk_i : in std_logic;
     rst_i : in std_logic;
     instr_i : std_logic_vector(31 downto 0); -- Fetched Instruction
-    instr_vd_i : std_logic; -- Instruction Valid
-  ) ;
+    instr_vd_i : std_logic -- Instruction Valid
+  );
 end instr_decoder;
 
 architecture arch of instr_decoder is
@@ -73,7 +73,7 @@ begin
       rd_r  <= instr_i(11 downto 7);
 
       -- OPCODE Selector
-      case instr_i(7 downto 0) =>
+      case instr_i(7 downto 0) is
         when others =>
         when others =>
       end case;
