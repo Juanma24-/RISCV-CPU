@@ -10,20 +10,6 @@ package CPU_PKG is
     -- --------------------------
     -- TYPES
     -- --------------------------
-
-    -- MEMORY IN/OUT
-    type mem_in_t is record
-        addr : std_logic_vector(4 downto 0);        -- x0-x31
-        data : std_logic_vector(XLEN_C-1 downto 0); -- Data for Write
-        en   : std_logic;                           -- Enable memory access
-        wr   : std_logic;                           -- If '1' write, otherwise read
-    end record mem_in_t;
-
-    type mem_out_t is record
-        rd_data : std_logic_vector(XLEN_C-1 downto 0); -- Read Data
-        rd_vd   : std_logic;                           -- Read Valid
-    end record mem_out_t;
-
     -- INSTRUCTION DECODER
     type op_t is record
         op_imm : std_logic; -- Covers OP_IMM

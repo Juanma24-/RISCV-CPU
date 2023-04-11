@@ -3,6 +3,8 @@ use ieee.std_logic_1164.all;
 
 library work;
 use work.CPU_PKG.all;
+use work.MEM_PKG.all;
+
 
 entity instr_decoder is
   generic (
@@ -20,8 +22,8 @@ entity instr_decoder is
     rd_o         : out std_logic_vector(5 downto 0);        -- Register Destination Output
     imm_o        : out std_logic_vector(XLEN_C-1 downto 0); -- Immediate Value
     -- To REGISTER MEMORY
-    rs1_o        : out mem_in_t;                            -- Register Selection 1 Output
-    rs2_o        : out mem_in_t                             -- Register Selection 2 Output
+    rs1_o        : out mem32_in_t;                            -- Register Selection 1 Output
+    rs2_o        : out mem32_in_t                             -- Register Selection 2 Output
   );
 end instr_decoder;
 

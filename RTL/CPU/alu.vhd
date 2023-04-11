@@ -3,6 +3,8 @@ use ieee.std_logic_1164.all;
 
 library work;
 use work.CPU_PKG.all;
+use work.MEM_PKG.all;
+
 
 entity alu is
   generic (
@@ -21,7 +23,7 @@ entity alu is
     rs1_i        : in mem_out_t; -- Register Selection 1 Input
     rs2_i        : in mem_out_t; -- Register Selection 2 Input
     -- To Registers
-    rd_o         : out mem_in_t
+    rd_o         : out mem32_in_t
   );
 end alu;
 
