@@ -10,7 +10,7 @@ use work.MEM_PKG.all;
 entity instr_decoder is
   generic (
     G_RSTTYPESEL   : natural range 0 to 1 := 0;  -- 0: Asynchronous Reset, 1: Synchronous Reset
-    G_RSTACTIVELVL : std_logic            := '0'    -- Reset active level
+    G_RSTACTIVELVL : std_logic            := '0'      -- Reset active level
     );
   port (
     clk_i       : in  std_logic;
@@ -18,20 +18,18 @@ entity instr_decoder is
     -- 
     instr_i     : in  std_logic_vector(31 downto 0);  -- Fetched Instruction
     -- To other CPU modules (Operations Decoded)
-    op_tbd_o    : out op_tbd_t;
+    op_reg_o    : out op_reg_t;
     op_branch_o : out op_branch_t;
-    op_load_o   : out op_load_t;
-    op_store_o  : out op_store_t;
+    op_lsu_o    : out op_lsu_t;
     op_alu_o    : out op_alu_t;
     op_err_o    : out op_err_t;
     -- IMMEDIATE Decoded
     imm_o       : out std_logic_vector(XLEN_C-1 downto 0);  -- Immediate Value
     imm_valid_o : out std_logic;
     -- To REGISTER MEMORY
-    rs1_o       : out mem32_in_t;       -- Register Selection 1 Output
-    rs2_o       : out mem32_in_t;       -- Register Selection 2 Output
-    rd_o        : out std_logic_vector(4 downto 0)  -- Register Destination Output
-
+    rs1_o       : out mem_in_t;         -- Register Selection 1 Output
+    rs2_o       : out mem_in_t;         -- Register Selection 2 Output
+    rd_o        : out mem_in_t          -- Register Destination Output
     );
 end instr_decoder;
 
@@ -47,38 +45,42 @@ architecture arch of instr_decoder is
   alias rs2_al        : std_logic_vector(4 downto 0) is instr_i(24 downto 20);
   alias rd_al         : std_logic_vector(4 downto 0) is instr_i(11 downto 7);
   -- SIGNALS
-  signal op_tbd_r     : op_tbd_t     := OP_TBD_NONE_C;
+  signal op_reg_r     : op_reg_t     := OP_REG_NONE_C;
   signal op_branch_r  : op_branch_t  := OP_BRANCH_NONE_C;
-  signal op_load_r    : op_load_t    := OP_LOAD_NONE_C;
-  signal op_store_r   : op_store_t   := OP_STORE_NONE_C;
+  signal op_lsu_r     : op_lsu_t     := OP_LSU_NONE_C;
   signal op_alu_r     : op_alu_t     := OP_ALU_NONE_C;  -- Operation ALU Selection
   signal op_err_r     : op_err_t     := OP_ERR_NONE_C;
-  signal instr_data_r : instr_data_t := INSTR_DATA_NONE_C;  -- Data encoded in
-                                                            -- the instruction
+  signal instr_data_r : instr_data_t := INSTR_DATA_NONE_C;  -- Data encoded in the instruction
+
 begin
   -- ------------------------------------------
   -- REGISTER FILE SELECTORS
   -- ------------------------------------------
   -- TODO: Aynchronous to read the memory on time
-  rs1_o.en   <= instr_data_r.rs1_valid;  -- Always Read (Conflict solved at memory level)
-  rs1_o.addr <= instr_data_r.rs1_addr;
-  rs1_o.data <= (others => '0');        -- Always read
-  rs1_o.wr   <= '0';  -- Always Read (Conflict solved at memory level)
+  rs1_o.en    <= '1';
+  rs1_o.addr  <= rs1_al;
+  rs1_o.data  <= (others => '0');       -- Always read
+  rs1_o.wr    <= '0';  -- Always Read (Conflict solved at memory level)
   --
-  rs2_o.en   <= instr_data_r.rs2_valid;
-  rs2_o.addr <= instr_data_r.rs2_addr;
-  rs2_o.data <= (others => '0');        -- Always Read
-  rs2_o.wr   <= '0';  -- Always Read (Conflict solved at memory level)
+  rs2_o.en    <= '1';
+  rs2_o.addr  <= rs2_al;
+  rs2_o.data  <= (others => '0');       -- Always Read
+  rs2_o.wr    <= '0';  -- Always Read (Conflict solved at memory level)
+  --
+  rd_o.en     <= instr_data_r.rd_valid;
+  rd_o.addr   <= instr_data_r.rd_addr;
+  rd_o.data   <= (others => '0');       -- Set by concerning unit
+  rd_o.wr     <= '1';  -- Always Write (Conflict solved at memory level)
+  --
+  imm_o       <= instr_data_r.imm;
+  imm_valid_o <= instr_data_r.imm_valid;
 
   -- To other modules of the CPU (Operations Decoded)
-  op_tbd_o    <= op_tbd_r;
+  op_reg_o    <= op_reg_r;
   op_branch_o <= op_branch_r;
-  op_load_o   <= op_load_r;
-  op_store_o  <= op_store_r;
+  op_lsu_o    <= op_lsu_r;
   op_alu_o    <= op_alu_r;
   op_err_o    <= op_err_r;
-  --
-  rd_o        <= instr_data_r.rd_addr;
 
   -- -----------------------------------------
   -- INSTRUCTION DECODER
@@ -86,15 +88,13 @@ begin
   decoder_op_p : process(clk_i, rst_i)
     procedure Reset is
     begin
-      op_tbd_r     <= OP_TBD_NONE_C;
+      op_reg_r     <= OP_REG_NONE_C;
       op_branch_r  <= OP_BRANCH_NONE_C;
-      op_load_r    <= OP_LOAD_NONE_C;
-      op_store_r   <= OP_STORE_NONE_C;
+      op_lsu_r     <= OP_LSU_NONE_C;
       op_alu_r     <= OP_ALU_NONE_C;
       op_err_r     <= OP_ERR_NONE_C;
       instr_data_r <= INSTR_DATA_NONE_C;
     end procedure;
-    -- Variables
     variable type_i_v : std_logic := '0';
     variable type_r_v : std_logic := '0';
     variable type_s_v : std_logic := '0';
@@ -107,20 +107,25 @@ begin
     elsif(rising_edge(clk_i)) then
 
       -- Defaults (Pulse behaviour)
-      op_tbd_r    <= OP_TBD_NONE_C;
+      op_reg_r    <= OP_REG_NONE_C;
       op_branch_r <= OP_BRANCH_NONE_C;
-      op_load_r   <= OP_LOAD_NONE_C;
-      op_store_r  <= OP_STORE_NONE_C;
+      op_lsu_r    <= OP_LSU_NONE_C;
       op_alu_r    <= OP_ALU_NONE_C;
       op_err_r    <= OP_ERR_NONE_C;
+      type_i_v    := '0';
+      type_r_v    := '0';
+      type_s_v    := '0';
+      type_b_v    := '0';
+      type_u_v    := '0';
+      type_j_v    := '0';
 
       -- OPCODE Selector
       case op_al is
-        when LUI_C   => op_tbd_r.lui_op   <= '1'; type_u_v := '1';
-        when AUIPC_C => op_tbd_r.auipc_op <= '1'; type_u_v := '1';
-        when JAL_C   => op_tbd_r.jal_op   <= '1'; type_j_v := '1';
-        when JALR_C  => type_i_v          := '1';
-                       if (funct3_al = F3_JALR_C) then op_tbd_r.jalr_op <= '1'; else op_err_r.undef_f3code <= '1'; end if;
+        when LUI_C   => op_reg_r.lui_op    <= '1'; type_u_v := '1';
+        when AUIPC_C => op_reg_r.auipc_op  <= '1'; type_u_v := '1';
+        when JAL_C   => op_branch_r.jal_op <= '1'; type_j_v := '1';
+        when JALR_C  => type_i_v           := '1';
+                       if (funct3_al = F3_JALR_C) then op_branch_r.jalr_op <= '1'; else op_err_r.undef_f3code <= '1'; end if;
         when BRANCH_C =>
           case funct3_al is
             when F3_BEQ_C  => op_branch_r.beq_op    <= '1'; type_b_v := '1';
@@ -133,18 +138,18 @@ begin
           end case;
         when LOAD_C =>
           case funct3_al is
-            when F3_LB_C  => op_load_r.lb_op       <= '1'; type_i_v := '1';
-            when F3_LH_C  => op_load_r.lh_op       <= '1'; type_i_v := '1';
-            when F3_LW_C  => op_load_r.lw_op       <= '1'; type_i_v := '1';
-            when F3_LBU_C => op_load_r.lbu_op      <= '1'; type_i_v := '1';
-            when F3_LHU_C => op_load_r.lhu_op      <= '1'; type_i_v := '1';
+            when F3_LB_C  => op_lsu_r.lb_op        <= '1'; type_i_v := '1';
+            when F3_LH_C  => op_lsu_r.lh_op        <= '1'; type_i_v := '1';
+            when F3_LW_C  => op_lsu_r.lw_op        <= '1'; type_i_v := '1';
+            when F3_LBU_C => op_lsu_r.lbu_op       <= '1'; type_i_v := '1';
+            when F3_LHU_C => op_lsu_r.lhu_op       <= '1'; type_i_v := '1';
             when others   => op_err_r.undef_f3code <= '1';
           end case;
         when STORE_C =>
           case funct3_al is
-            when F3_SB_C => op_store_r.sb_op      <= '1'; type_s_v := '1';
-            when F3_SH_C => op_store_r.sh_op      <= '1'; type_s_v := '1';
-            when F3_SW_C => op_store_r.sw_op      <= '1'; type_s_v := '1';
+            when F3_SB_C => op_lsu_r.sb_op        <= '1'; type_s_v := '1';
+            when F3_SH_C => op_lsu_r.sh_op        <= '1'; type_s_v := '1';
+            when F3_SW_C => op_lsu_r.sw_op        <= '1'; type_s_v := '1';
             when others  => op_err_r.undef_f3code <= '1';
           end case;
         when OP_IMM_C =>
@@ -217,46 +222,40 @@ begin
       -- RS1, RS2 and RD are always decode in the same way as they depend
       -- on its valid signal. An instruction w/o one of these fields will
       -- ignore these values.
-      instr_data_r.rs1_addr <= rs1_al;
-      instr_data_r.rs2_addr <= rs2_al;
-      instr_data_r.rd_addr  <= rd_al;
+      instr_data_r.rd_addr <= rd_al;
+      instr_data_r.imm     <= (others => '0');  -- By default fill it with 0s
 
       if (type_r_v = '1') then
         instr_data_r.imm       <= (others => '0');
         instr_data_r.imm_valid <= '0';
-        instr_data_r.rs1_valid <= '1';
-        instr_data_r.rs2_valid <= '1';
         instr_data_r.rd_valid  <= '1';
       elsif (type_i_v = '1') then
-        instr_data_r.imm       <= resize(signed(instr_i(31 downto 20)), XLEN_C);
-        instr_data_r.imm_valid <= '1';
-        instr_data_r.rs1_valid <= '1';
-        instr_data_r.rs2_valid <= '0';
-        instr_data_r.rd_valid  <= '1';
+        instr_data_r.imm(11 downto 0) <= instr_i(31 downto 20);
+        instr_data_r.imm_valid        <= '1';
+        instr_data_r.rd_valid         <= '1';
       elsif(type_s_v = '1') then
-        instr_data_r.imm       <= resize(signed(instr_i(31 downto 25) & instr_i(11 downto 7)), XLEN_C);
-        instr_data_r.imm_valid <= '1';
-        instr_data_r.rs1_valid <= '1';
-        instr_data_r.rs2_valid <= '0';
-        instr_data_r.rd_valid  <= '0';
+        instr_data_r.imm(11 downto 5) <= instr_i(31 downto 25);
+        instr_data_r.imm(4 downto 0)  <= instr_i(11 downto 7);
+        instr_data_r.imm_valid        <= '1';
+        instr_data_r.rd_valid         <= '0';
       elsif(type_b_v = '1') then
-        instr_data_r.imm       <= resize(signed(instr_i(31) & instr_i(7) & instr_i(30 downto 25) & instr_i(11 downto 6) & '0'), XLEN_C);
-        instr_data_r.imm_valid <= '1';
-        instr_data_r.rs1_valid <= '1';
-        instr_data_r.rs2_valid <= '1';
-        instr_data_r.rd_valid  <= '0';
+        instr_data_r.imm(12)          <= instr_i(31);
+        instr_data_r.imm(11)          <= instr_i(7);
+        instr_data_r.imm(10 downto 5) <= instr_i(30 downto 25);
+        instr_data_r.imm(4 downto 1)  <= instr_i(11 downto 8);
+        instr_data_r.imm_valid        <= '1';
+        instr_data_r.rd_valid         <= '0';
       elsif(type_u_v = '1') then
-        instr_data_r.imm       <= resize(signed(instr_i(31 downto 12) & x"000"), XLEN_C);
-        instr_data_r.imm_valid <= '1';
-        instr_data_r.rs1_valid <= '0';
-        instr_data_r.rs2_valid <= '0';
-        instr_data_r.rd_valid  <= '1';
+        instr_data_r.imm(31 downto 12) <= instr_i(31 downto 12);
+        instr_data_r.imm_valid         <= '1';
+        instr_data_r.rd_valid          <= '1';
       elsif(type_j_v = '1') then
-        instr_data_r.imm       <= resize(signed(instr_i(31) & instr_i(19 downto 12) & instr_i(20) & instr_i(30 downto 21) & '0'), XLEN_C);
-        instr_data_r.imm_valid <= '1';
-        instr_data_r.rs1_valid <= '0';
-        instr_data_r.rs2_valid <= '0';
-        instr_data_r.rd_valid  <= '1';
+        instr_data_r.imm(20)           <= instr_i(31);
+        instr_data_r.imm(19 downto 12) <= instr_i(19 downto 12);
+        instr_data_r.imm(11)           <= instr_i(20);
+        instr_data_r.imm(10 downto 1)  <= instr_i(30 downto 21);
+        instr_data_r.imm_valid         <= '1';
+        instr_data_r.rd_valid          <= '1';
       else
         instr_data_r <= INSTR_DATA_NONE_C;
       end if;
