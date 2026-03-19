@@ -9,14 +9,13 @@ package CPU_PKG is
   -- TYPES
   -- --------------------------
   -- INSTRUCTION DECODER TYPES
-  type op_tbd_t is record
+  -- Register Operations
+  type op_reg_t is record
     lui_op   : std_logic;
     auipc_op : std_logic;
-    jal_op   : std_logic;
-    jalr_op  : std_logic;
-  end record op_tbd_t;
-  constant OP_TBD_NONE_C : op_tbd_t := (others => '0');
-  --
+  end record op_reg_t;
+  constant OP_REG_NONE_C : op_reg_t := (others => '0');
+
   -- Branch Operations
   type op_branch_t is record
     beq_op  : std_logic;
@@ -25,24 +24,23 @@ package CPU_PKG is
     bge_op  : std_logic;
     bltu_op : std_logic;
     bgeu_op : std_logic;
+    jal_op   : std_logic;
+    jalr_op  : std_logic;
   end record op_branch_t;
   constant OP_BRANCH_NONE_C : op_branch_t := (others => '0');
-  -- Load Operations
-  type op_load_t is record
+
+  -- Load-Store Unit Operations
+  type op_lsu_t is record
     lb_op  : std_logic;
     lh_op  : std_logic;
     lw_op  : std_logic;
     lbu_op : std_logic;
     lhu_op : std_logic;
-  end record op_load_t;
-  constant OP_LOAD_NONE_C : op_load_t := (others => '0');
-  -- Store Operations
-  type op_store_t is record
     sb_op : std_logic;
     sh_op : std_logic;
     sw_op : std_logic;
-  end record op_store_t;
-  constant OP_STORE_NONE_C : op_store_t := (others => '0');
+  end record op_lsu_t;
+  constant OP_LSU_NONE_C : op_lsu_t := (others => '0');
   -- ALU Operations
   type op_alu_t is record
     add_op  : std_logic;                        -- Addition
@@ -79,7 +77,7 @@ package CPU_PKG is
     rs1_valid : std_logic;
     rs2_valid : std_logic;
     rd_valid  : std_logic;
-    imm       : signed(31 downto 0);  -- Max length
+    imm       : std_logic_vector(31 downto 0);  -- Max length
     rs1_addr  : std_logic_vector(4 downto 0);
     rs2_addr  : std_logic_vector(4 downto 0);
     rd_addr   : std_logic_vector(4 downto 0);
@@ -207,7 +205,7 @@ package CPU_PKG is
   constant F7_SUB_C       : std_logic_vector(6 downto 0) := "0100000";  -- SUB performs the subtraction of rs2 from rs1.
   constant F7_SLL_C       : std_logic_vector(6 downto 0) := "0000000";  --
   constant F7_SLT_C       : std_logic_vector(6 downto 0) := "0000000";  -- SRL performs logical right shift
-  constant F7_SLTU_C      : std_logic_vector(6 downto 0) := "0100000";  -- SRA performs  arithmetic right shifts on the value in register rs1 by the shift amount held in the lower 5 bits of register rs2
+  constant F7_SLTU_C      : std_logic_vector(6 downto 0) := "0000000";  -- SRA performs  arithmetic right shifts on the value in register rs1 by the shift amount held in the lower 5 bits of register rs2
   constant F7_XOR_C       : std_logic_vector(6 downto 0) := "0000000";  --
   constant F7_SRL_C       : std_logic_vector(6 downto 0) := "0000000";  --
   constant F7_SRA_C       : std_logic_vector(6 downto 0) := "0100000";  --

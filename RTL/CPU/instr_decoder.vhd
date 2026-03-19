@@ -56,14 +56,9 @@ begin
   -- ------------------------------------------
   -- REGISTER FILE SELECTORS
   -- ------------------------------------------
-  -- TODO: Aynchronous to read the memory on time
-  rs1_o.en    <= '1';
-  rs1_o.addr  <= rs1_al;
   rs1_o.data  <= (others => '0');       -- Always read
   rs1_o.wr    <= '0';  -- Always Read (Conflict solved at memory level)
   --
-  rs2_o.en    <= '1';
-  rs2_o.addr  <= rs2_al;
   rs2_o.data  <= (others => '0');       -- Always Read
   rs2_o.wr    <= '0';  -- Always Read (Conflict solved at memory level)
   --
@@ -83,6 +78,51 @@ begin
   op_err_o    <= op_err_r;
 
   -- -----------------------------------------
+  -- REGISTER FILE TRIGGER
+  -- -----------------------------------------
+  register_file_trigger : process(instr_i)
+  begin
+    -- OPCODE Selector
+    case op_al is
+      when LUI_C =>
+        rs1_o.en <= '0'; rs1_o.addr <= (others => '0');
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+      when AUIPC_C =>
+        rs1_o.en <= '0'; rs1_o.addr <= (others => '0');
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+      when JAL_C =>
+        rs1_o.en <= '0'; rs1_o.addr <= (others => '0');
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+      when JALR_C =>
+        rs1_o.en <= '1'; rs1_o.addr <= rs1_al;
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+      when BRANCH_C =>
+        rs1_o.en <= '1'; rs1_o.addr <= rs1_al;
+        rs2_o.en <= '1'; rs2_o.addr <= rs2_al;
+      when LOAD_C =>
+        rs1_o.en <= '1'; rs1_o.addr <= rs1_al;
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+      when STORE_C =>
+        rs1_o.en <= '1'; rs1_o.addr <= rs1_al;
+        rs2_o.en <= '1'; rs2_o.addr <= rs2_al;
+      when OP_IMM_C =>
+        rs1_o.en <= '1'; rs1_o.addr <= rs1_al;
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+      when OP_C =>
+        rs1_o.en <= '1'; rs1_o.addr <= rs1_al;
+        rs2_o.en <= '1'; rs2_o.addr <= rs2_al;
+      when SYSTEM_C =>
+        rs1_o.en <= '0'; rs1_o.addr <= (others => '0');
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+      when others =>
+        rs1_o.en <= '0'; rs1_o.addr <= (others => '0');
+        rs2_o.en <= '0'; rs2_o.addr <= (others => '0');
+    end case;
+
+  end process;
+
+
+  -- -----------------------------------------
   -- INSTRUCTION DECODER
   -- -----------------------------------------
   decoder_op_p : process(clk_i, rst_i)
@@ -95,29 +135,31 @@ begin
       op_err_r     <= OP_ERR_NONE_C;
       instr_data_r <= INSTR_DATA_NONE_C;
     end procedure;
-    variable type_i_v : std_logic := '0';
-    variable type_r_v : std_logic := '0';
-    variable type_s_v : std_logic := '0';
-    variable type_b_v : std_logic := '0';
-    variable type_u_v : std_logic := '0';
-    variable type_j_v : std_logic := '0';
+    variable type_i_v       : std_logic := '0';
+    variable type_i_shamt_v : std_logic := '0';
+    variable type_r_v       : std_logic := '0';
+    variable type_s_v       : std_logic := '0';
+    variable type_b_v       : std_logic := '0';
+    variable type_u_v       : std_logic := '0';
+    variable type_j_v       : std_logic := '0';
   begin
     if (G_RSTTYPESEL = 0 and G_RSTACTIVELVL = rst_i) then
       Reset;
     elsif(rising_edge(clk_i)) then
 
       -- Defaults (Pulse behaviour)
-      op_reg_r    <= OP_REG_NONE_C;
-      op_branch_r <= OP_BRANCH_NONE_C;
-      op_lsu_r    <= OP_LSU_NONE_C;
-      op_alu_r    <= OP_ALU_NONE_C;
-      op_err_r    <= OP_ERR_NONE_C;
-      type_i_v    := '0';
-      type_r_v    := '0';
-      type_s_v    := '0';
-      type_b_v    := '0';
-      type_u_v    := '0';
-      type_j_v    := '0';
+      op_reg_r       <= OP_REG_NONE_C;
+      op_branch_r    <= OP_BRANCH_NONE_C;
+      op_lsu_r       <= OP_LSU_NONE_C;
+      op_alu_r       <= OP_ALU_NONE_C;
+      op_err_r       <= OP_ERR_NONE_C;
+      type_i_v       := '0';
+      type_i_shamt_v := '0';
+      type_r_v       := '0';
+      type_s_v       := '0';
+      type_b_v       := '0';
+      type_u_v       := '0';
+      type_j_v       := '0';
 
       -- OPCODE Selector
       case op_al is
@@ -163,11 +205,11 @@ begin
             when F3_ANDI_C  => op_alu_r.and_op  <= '1'; type_i_v := '1';
             when F3_SLLI_C =>
               if (funct7_al = F7_SLLI_C) then op_alu_r.sll_op <= '1'; else op_err_r.undef_f7code <= '1'; end if;
-              type_r_v                                        := '1';
+              type_i_shamt_v                                  := '1';
             when F3_SRLI_SRAI_C =>
               case funct7_al is
-                when F7_SRLI_C => op_alu_r.srl_op       <= '1'; type_r_v := '1';
-                when F7_SRAI_C => op_alu_r.sra_op       <= '1'; type_r_v := '1';
+                when F7_SRLI_C => op_alu_r.srl_op       <= '1'; type_i_shamt_v := '1';
+                when F7_SRAI_C => op_alu_r.sra_op       <= '1'; type_i_shamt_v := '1';
                 when others    => op_err_r.undef_f7code <= '1';
               end case;
             when others =>
@@ -230,15 +272,22 @@ begin
         instr_data_r.imm_valid <= '0';
         instr_data_r.rd_valid  <= '1';
       elsif (type_i_v = '1') then
-        instr_data_r.imm(11 downto 0) <= instr_i(31 downto 20);
-        instr_data_r.imm_valid        <= '1';
-        instr_data_r.rd_valid         <= '1';
+        instr_data_r.imm(31 downto 12) <= (others => instr_i(31));
+        instr_data_r.imm(11 downto 0)  <= instr_i(31 downto 20);
+        instr_data_r.imm_valid         <= '1';
+        instr_data_r.rd_valid          <= '1';
+      elsif (type_i_shamt_v = '1') then
+        instr_data_r.imm(4 downto 0) <= instr_i(24 downto 20);
+        instr_data_r.imm_valid       <= '1';
+        instr_data_r.rd_valid        <= '1';
       elsif(type_s_v = '1') then
+        instr_data_r.imm(31 downto 12) <= (others => instr_i(31));
         instr_data_r.imm(11 downto 5) <= instr_i(31 downto 25);
         instr_data_r.imm(4 downto 0)  <= instr_i(11 downto 7);
         instr_data_r.imm_valid        <= '1';
         instr_data_r.rd_valid         <= '0';
       elsif(type_b_v = '1') then
+        instr_data_r.imm(31 downto 13) <= (others => instr_i(31));
         instr_data_r.imm(12)          <= instr_i(31);
         instr_data_r.imm(11)          <= instr_i(7);
         instr_data_r.imm(10 downto 5) <= instr_i(30 downto 25);
@@ -250,6 +299,7 @@ begin
         instr_data_r.imm_valid         <= '1';
         instr_data_r.rd_valid          <= '1';
       elsif(type_j_v = '1') then
+        instr_data_r.imm(31 downto 21) <= (others => instr_i(31));
         instr_data_r.imm(20)           <= instr_i(31);
         instr_data_r.imm(19 downto 12) <= instr_i(19 downto 12);
         instr_data_r.imm(11)           <= instr_i(20);

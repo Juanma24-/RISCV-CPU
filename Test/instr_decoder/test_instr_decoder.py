@@ -512,7 +512,7 @@ async def test_i_type_alu(dut):
 # TEST 4 – U-type: LUI / AUIPC
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_u_type(dut):
     """LUI→lui_op=1; AUIPC→auipc_op=1. Lower 12 imm bits must be zero."""
     cocotb.start_soon(generate_clock(dut))
@@ -548,7 +548,7 @@ async def test_u_type(dut):
 # TEST 5 – Load instructions  (opcode = 0b000_0011)
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_load_instructions(dut):
     """LB/LH/LW/LBU/LHU: one load flag high, all store flags low."""
     cocotb.start_soon(generate_clock(dut))
@@ -557,11 +557,11 @@ async def test_load_instructions(dut):
 
     cases = [
         (0x0043A303, "LW  x6, 4(x7)",          ExpOpLSU(lw_op=1,  lb_op=0, lh_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0, sw_op=0),  4, 7, 6),
-        (0xFFC10083, "LW  x1,-4(x2) neg",       ExpOpLSU(lw_op=1,  lb_op=0, lh_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0, sw_op=0), -4, 2, 1),
+        (0xFFC12083, "LW  x1,-4(x2) neg",       ExpOpLSU(lw_op=1,  lb_op=0, lh_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0, sw_op=0), -4, 2, 1),
         (0x00211083, "LH  x1, 2(x2)",           ExpOpLSU(lh_op=1,  lb_op=0, lw_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0, sw_op=0),  2, 2, 1),
         (0x00110083, "LB  x1, 1(x2)",           ExpOpLSU(lb_op=1,  lh_op=0, lw_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0, sw_op=0),  1, 2, 1),
         (0x00215083, "LHU x1, 2(x2)",           ExpOpLSU(lhu_op=1, lb_op=0, lh_op=0, lw_op=0,  lbu_op=0, sb_op=0, sh_op=0, sw_op=0),  2, 2, 1),
-        (0x00214083, "LBU x1, 1(x2)",           ExpOpLSU(lbu_op=1, lb_op=0, lh_op=0, lw_op=0,  lhu_op=0, sb_op=0, sh_op=0, sw_op=0),  1, 2, 1),
+        (0x00114083, "LBU x1, 1(x2)",           ExpOpLSU(lbu_op=1, lb_op=0, lh_op=0, lw_op=0,  lhu_op=0, sb_op=0, sh_op=0, sw_op=0),  1, 2, 1),
     ]
 
     for instr_hex, desc, lsu, imm_val, r1, r_d in cases:
@@ -578,7 +578,7 @@ async def test_load_instructions(dut):
 # TEST 6 – Store instructions  (opcode = 0b010_0011)
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_store_instructions(dut):
     """SB/SH/SW: split S-immediate reassembled correctly; one store flag high."""
     cocotb.start_soon(generate_clock(dut))
@@ -587,9 +587,9 @@ async def test_store_instructions(dut):
 
     cases = [
         (0x0084A423, "SW x8, 8(x9)",        ExpOpLSU(sw_op=1, lb_op=0, lh_op=0, lw_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0),  8, 9, 8),
-        (0xFC84AC23, "SW x8,-8(x9) neg",    ExpOpLSU(sw_op=1, lb_op=0, lh_op=0, lw_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0), -8, 9, 8),
+        (0xFE84AC23, "SW x8,-8(x9) neg",    ExpOpLSU(sw_op=1, lb_op=0, lh_op=0, lw_op=0, lbu_op=0, lhu_op=0, sb_op=0, sh_op=0), -8, 9, 8),
         (0x00849223, "SH x8, 4(x9)",        ExpOpLSU(sh_op=1, lb_op=0, lh_op=0, lw_op=0, lbu_op=0, lhu_op=0, sb_op=0, sw_op=0),  4, 9, 8),
-        (0x00848123, "SB x8, 1(x9)",        ExpOpLSU(sb_op=1, lb_op=0, lh_op=0, lw_op=0, lbu_op=0, lhu_op=0, sh_op=0, sw_op=0),  1, 9, 8),
+        (0x008480A3, "SB x8, 1(x9)",        ExpOpLSU(sb_op=1, lb_op=0, lh_op=0, lw_op=0, lbu_op=0, lhu_op=0, sh_op=0, sw_op=0),  1, 9, 8),
     ]
 
     for instr_hex, desc, lsu, imm_val, r1, r2 in cases:
@@ -606,7 +606,7 @@ async def test_store_instructions(dut):
 # TEST 7 – Branch instructions  (opcode = 0b110_0011)
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_branch_instructions(dut):
     """BEQ/BNE/BLT/BGE/BLTU/BGEU: one branch flag high; forward and backward."""
     cocotb.start_soon(generate_clock(dut))
@@ -618,8 +618,8 @@ async def test_branch_instructions(dut):
         (0x00209463, "BNE  x1,x2,+8",    ExpOpBranch(beq_op=0,  bne_op=1, blt_op=0, bge_op=0, bltu_op=0, bgeu_op=0, jal_op=0, jalr_op=0),   8,  1,  2),
         (0x0041C663, "BLT  x3,x4,+12",   ExpOpBranch(beq_op=0,  bne_op=0, blt_op=1, bge_op=0, bltu_op=0, bgeu_op=0, jal_op=0, jalr_op=0),  12,  3,  4),
         (0x0041D663, "BGE  x3,x4,+12",   ExpOpBranch(beq_op=0,  bne_op=0, blt_op=0, bge_op=1, bltu_op=0, bgeu_op=0, jal_op=0, jalr_op=0),  12,  3,  4),
-        (0x00419463, "BLTU x3,x4,+8",    ExpOpBranch(beq_op=0,  bne_op=0, blt_op=0, bge_op=0, bltu_op=1, bgeu_op=0, jal_op=0, jalr_op=0),   8,  3,  4),
-        (0x0041A463, "BGEU x3,x4,+8",    ExpOpBranch(beq_op=0,  bne_op=0, blt_op=0, bge_op=0, bltu_op=0, bgeu_op=1, jal_op=0, jalr_op=0),   8,  3,  4),
+        (0x0041E463, "BLTU x3,x4,+8",    ExpOpBranch(beq_op=0,  bne_op=0, blt_op=0, bge_op=0, bltu_op=1, bgeu_op=0, jal_op=0, jalr_op=0),   8,  3,  4),
+        (0x0041F463, "BGEU x3,x4,+8",    ExpOpBranch(beq_op=0,  bne_op=0, blt_op=0, bge_op=0, bltu_op=0, bgeu_op=1, jal_op=0, jalr_op=0),   8,  3,  4),
         (0xFE208CE3, "BEQ  x1,x2,-8 bwd",ExpOpBranch(beq_op=1,  bne_op=0, blt_op=0, bge_op=0, bltu_op=0, bgeu_op=0, jal_op=0, jalr_op=0),  -8,  1,  2),
     ]
 
@@ -637,7 +637,7 @@ async def test_branch_instructions(dut):
 # TEST 8 – JAL  (opcode = 0b110_1111)
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_jal(dut):
     """JAL: jal_op=1, jalr_op=0. Forward, zero and backward offsets."""
     cocotb.start_soon(generate_clock(dut))
@@ -664,7 +664,7 @@ async def test_jal(dut):
 # TEST 9 – JALR  (opcode = 0b110_0111, funct3=000)
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_jalr(dut):
     """JALR: jalr_op=1, jal_op=0.  Normal call and RET (rd=x0)."""
     cocotb.start_soon(generate_clock(dut))
@@ -690,7 +690,7 @@ async def test_jalr(dut):
 # TEST 10 – op_err_t fields
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_error_flags(dut):
     """undef_opcode / undef_f3code / undef_f7code each asserted in isolation."""
     cocotb.start_soon(generate_clock(dut))
@@ -711,7 +711,7 @@ async def test_error_flags(dut):
 
     # undef_f3code: R-type opcode, funct3=011 (undefined in RV32I)
     await drive_and_check(
-        dut, 0x00018033, "undef_f3code: R-type funct3=011",
+        dut, 0x0001B003, "undef_f3code: R-type funct3=011",
         op_err    = ExpOpErr(undef_opcode=0, undef_f3code=1, undef_f7code=0),
         op_branch = OP_BRANCH_NOP, op_lsu = OP_LSU_NOP,
     )
@@ -728,7 +728,7 @@ async def test_error_flags(dut):
 # TEST 11 – rd=x0 suppresses register write
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_rd_x0_suppressed(dut):
     """op_reg must be NOP when rd=x0, regardless of instruction type."""
     cocotb.start_soon(generate_clock(dut))
@@ -737,8 +737,8 @@ async def test_rd_x0_suppressed(dut):
 
     cases = [
         (0x00508013, "ADDI x0,x1,5  (I-type rd=x0)", 0),
-        (0x002080B3, "ADD  x0,x1,x2 (R-type rd=x0)", 0),
-        (0x000010B7, "LUI  x0,1      (U-type rd=x0)", 0),
+        (0x00208033, "ADD  x0,x1,x2 (R-type rd=x0)", 0),
+        (0x00001037, "LUI  x0,1      (U-type rd=x0)", 0),
     ]
 
     for instr_hex, desc, r_d in cases:
@@ -754,7 +754,7 @@ async def test_rd_x0_suppressed(dut):
 # TEST 12 – Back-to-back stream (stale-state regression)
 # ===========================================================================
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_back_to_back_stream(dut):
     """Dense varied stream; checks cross-type flag de-assertion every cycle."""
     cocotb.start_soon(generate_clock(dut))
